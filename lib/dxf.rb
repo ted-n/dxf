@@ -1,6 +1,16 @@
 require "dxf/version"
+require "dxf/table"
 
 module DXF
+  
+  class HandleManager
+    class << self
+      @@handle = 1000
+      def allocate
+        @@handle += 1
+      end
+    end
+  end
 
   class Group
     attr_reader :code, :value
@@ -26,17 +36,17 @@ module DXF
     def initialize(list = [])
       @list = list
     end
+    
+    def << (group)
+      @list << group
+    end
 
     def to_array
       result = []
       list.each do |group|
-        result << group.to_array
+        result.concat(group.to_array)
       end
       result
-    end
-
-    def << (shape)
-      @list << shape
     end
   end
 
@@ -47,7 +57,11 @@ module DXF
       @name = name
       @content = Groups.new
     end
-
+    
+    def add(object)
+      @content << object
+    end
+    
     def to_array
       [0, "SECTION"] + [2, @name] + @content.to_array + [0, "ENDSEC"]
     end
@@ -59,18 +73,36 @@ module DXF
   end
   
   class Header < Section
+    
+    class Variable < Group
+      def initialize(name, code, value)
+        super(9, name)
+        @var_code = code
+        @var_value = value
+      end
+      def to_array
+        super + [@var_code, @var_value]
+      end
+    end
+
     def initialize
       super("HEADER")
+      add(Variable.new("$ACADVER", 1, "AC1024"))
+      add(Variable.new("$HANDSEED", 5, "400"))
     end
   end
-
+  
+  class Tables < Section
+    def initialize
+      super("TABLES")
+      add(LayerTable.new("0"))
+      add(AppIDTable.new("RubyDXF"))
+    end
+  end
+  
   class Entities < Section
     def initialize
       super("ENTITIES")
-    end
-
-    def add(shape)
-      @content << shape
     end
   end
   
@@ -79,17 +111,20 @@ module DXF
 
     def initialize
       @header = Header.new
+      @tables = Tables.new
       @entities = Entities.new
     end
 
     def to_array
-      @header.to_array + @entities.to_array + [0, "EOF"]
+      @header.to_array + @tables.to_array + @entities.to_array + [0, "EOF"]
     end
 
     def save(filename)
       ::File.open(filename, "wt") do |file|
-        @header.write(file)
-        @entities.write(file)
+        to_array.each do |line|
+          file.write(line)
+          file.write("\n")
+        end
         file.write("0\nEOF\n")
       end
     end
