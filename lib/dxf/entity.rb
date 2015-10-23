@@ -54,6 +54,21 @@ module DXF
     end
   end
   
+  class Text < Entity
+    def initialize(point, height, message)
+      super("TEXT")
+      @point = point
+      @height = height
+      @message = message
+      @subclass = @subclass << "AcDbText"
+    end
+    def to_array
+      super +
+      [10, @point[X], 20, @point[Y], 30, 0, 40, @height, 1, @message] +
+      [100, @subclass[1]]
+    end
+  end
+  
   class Block < Entity
     def initialize(name)
       super("BLOCK")

@@ -1,4 +1,4 @@
-require 'test/unit'
+﻿require 'test/unit'
 require 'dxf'
 require 'dxf/entity'
 include DXF
@@ -44,6 +44,7 @@ class TestFile < Test::Unit::TestCase
 
   def test_rectangle
     @@file.entities.add(DXF::Rectangle.new([0.5, 0.5], [2, 2]))
+    @@file.entities.add(DXF::Text.new([0.5, 0.5], 3, "test"))
   end
     
 end
