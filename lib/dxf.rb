@@ -1,5 +1,6 @@
 require "dxf/version"
 require "dxf/table"
+require "dxf/object"
 
 module DXF
   
@@ -128,6 +129,17 @@ module DXF
     end
   end
   
+  class Objects < Section
+    def initialize
+      super("OBJECTS")
+      dictionary = Dictionary.new(0xC)
+      dictionary.items["ACAD_GROUP"] = "D"
+      @content << dictionary
+      dictionary = Dictionary.new(0xD)
+      @content << dictionary
+    end
+  end
+  
   class File
     attr_reader :entities
 
@@ -136,7 +148,8 @@ module DXF
       @tables = Tables.new
       @blocks = Blocks.new
       @entities = Entities.new
-      @sections = [@header, @tables, @blocks, @entities]
+      @objects = Objects.new
+      @sections = [@header, @tables, @blocks, @entities, @objects]
       addBlock("*Model_Space")
       addBlock("*Paper_Space")
     end
