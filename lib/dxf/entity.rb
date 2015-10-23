@@ -40,15 +40,16 @@ module DXF
   class LWPolyLine < Entity
     attr_reader :points
     
-    def initialize(points)
+    def initialize(points, closed)
       super("LWPOLYLINE")
       @points = points
+      @closed = closed
       @subclass = @subclass << "AcDbPolyline"
     end
     
     def to_array
       super +
-      [90, points.count] +
+      [90, points.count] + [70, @closed ? 1 : 0] +
       points.collect { |point| [10, point[X], 20, point[Y]] }.flatten
     end
   end
@@ -75,7 +76,9 @@ module DXF
   
   class Rectangle < LWPolyLine
     def initialize(point1, point2)
-      super([point1, point2])
+      point3 = [point1[X], point2[Y]]
+      point4 = [point2[X], point1[Y]]
+      super([point1, point3, point2, point4], true)
     end
   end
 
