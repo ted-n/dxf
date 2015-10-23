@@ -5,24 +5,24 @@ module DXF
   X = 0 # [X, Y]
   Y = 1 # Å™
 
-  class Shape
+  class Entity
     attr_reader :name
     attr_accessor :layer
     
-    def initialize(name)
-      @name = name
+    def initialize(type)
+      @type = type
       @layer = "0"
       @subclass = ["AcDbEntity"]
       @handle = HandleManager.allocate
     end
 
     def to_array
-      [0, @name, 8, @layer, 5, @handle.to_s(16)] +
+      [0, @type, 8, @layer, 5, @handle.to_s(16)] +
       @subclass.collect { |subclass| [100, subclass] }.flatten
     end
   end
 
-  class Line < Shape
+  class Line < Entity
     attr_reader :p1, :p2
     
     def initialize(p1, p2)
@@ -37,7 +37,7 @@ module DXF
     end
   end
   
-  class LWPolyLine < Shape
+  class LWPolyLine < Entity
     attr_reader :points
     
     def initialize(points)
@@ -52,6 +52,26 @@ module DXF
       points.collect { |point| [10, point[X], 20, point[Y]] }.flatten
     end
   end
+  
+  class Block < Entity
+    def initialize(name)
+      super("BLOCK")
+      @name = name
+      @subclass << "AcDbBlockBegin"
+    end
+    def to_array
+      super + [2, @name]
+    end
+  end
+  
+  class EndBlock < Entity
+    def initialize
+      super("ENDBLK")
+      @subclass << "AcDbBlockEnd"
+    end
+  end
+  
+  # Utility Classes
   
   class Rectangle < LWPolyLine
     def initialize(point1, point2)

@@ -5,7 +5,7 @@ require "rake/testtask"
 
 #RSpec::Core::RakeTask.new(:spec)
 
-#task :default => :spec
+task :default => :test
 
 Rake::TestTask.new do |t|
 	t.libs << "test"

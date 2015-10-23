@@ -40,7 +40,11 @@ module DXF
     def << (group)
       @list << group
     end
-
+    
+    def addGroup(code, value)
+      self.<<(Group.new(code, value))
+    end
+    
     def to_array
       result = []
       list.each do |group|
@@ -95,11 +99,29 @@ module DXF
   class Tables < Section
     def initialize
       super("TABLES")
+      
+      add(VPortTable.new)
+      add(LTypeTable.new)
       add(LayerTable.new("0"))
-      add(AppIDTable.new("RubyDXF"))
+      add(TextStyleTable.new)
+      add(ViewTable.new)
+      add(UCSTable.new)
+      add(AppIDTable.new("ACAD"))
+      add(DimStyleTable.new)
+      @block_records = BlockRecordTable.new
+      add(@block_records)
+    end
+    def registerBlock(block)
+      @block_records.add(block.name)
     end
   end
   
+  class Blocks < Section
+    def initialize
+      super("BLOCKS")
+    end
+  end
+    
   class Entities < Section
     def initialize
       super("ENTITIES")
@@ -112,11 +134,24 @@ module DXF
     def initialize
       @header = Header.new
       @tables = Tables.new
+      @blocks = Blocks.new
       @entities = Entities.new
+      @sections = [@header, @tables, @blocks, @entities]
+      addBlock("*Model_Space")
+      addBlock("*Paper_Space")
     end
 
     def to_array
-      @header.to_array + @tables.to_array + @entities.to_array + [0, "EOF"]
+      @sections.collect {|section| section.to_array}.flatten +
+      [0, "EOF"]
+    end
+    
+    def addBlock(name)
+      block = Block.new(name)
+      end_block = EndBlock.new
+      @blocks.add(block)
+      @blocks.add(end_block)
+      @tables.registerBlock(block)
     end
 
     def save(filename)
@@ -125,7 +160,6 @@ module DXF
           file.write(line)
           file.write("\n")
         end
-        file.write("0\nEOF\n")
       end
     end
     

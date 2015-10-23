@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'dxf'
-require 'dxf/shape'
+require 'dxf/entity'
 include DXF
 include Math
 
